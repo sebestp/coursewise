@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>版本控制 · 基于 Git 的方法（互动 HTML 课件 · v5）</title>
+<title>版本控制 · 基于 Git 的方法（互动 HTML 课件 · v6）</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--ink:#1a1a1a;--accent:#FF0066;--blue:#0000FF;--green:#00AA00;--paper:#fff;--muted:#666;--line:#e5e5e5}
@@ -67,7 +67,7 @@ code{font-family:"SF Mono",Consolas,Menlo,monospace;font-size:.92em;background:#
 
 /* 代码块 */
 .codeblock{font-family:"SF Mono",Consolas,Menlo,monospace;font-size:19px;line-height:1.55;background:#f7f7f7;
-  border:1px solid #e8e8e8;border-radius:8px;padding:16px 20px;color:#333;white-space:pre;width:100%;max-width:900px;text-align:left}
+  border:1px solid #e8e8e8;border-radius:8px;padding:16px 20px;color:#333;white-space:pre;width:100%;max-width:900px;text-align:left;overflow-x:auto}
 .codeblock .c{color:var(--green)}
 .codeblock .k{color:var(--accent)}
 .cmdtable{border-collapse:collapse;width:100%;max-width:860px}
@@ -201,7 +201,7 @@ code{font-family:"SF Mono",Consolas,Menlo,monospace;font-size:.92em;background:#
     <div class="cover-title">
       <div class="cover-sub">软件工程实践</div>
       <h1>版本控制 —— 基于 Git 的方法</h1>
-      <div class="cover-sub2">第五讲 · 互动 HTML 课件 · v5（响应式 · 全屏 · 语音 · AI 时代）</div>
+      <div class="cover-sub2">第五讲 · 互动 HTML 课件 · v6（响应式 · 全屏 · 语音 · AI 时代 · 移动端自适应）</div>
     </div>
     <div class="fig-center"><img src="assets/image1.png" style="width:360px" alt=""></div>
   </div>
@@ -944,7 +944,8 @@ function fit(){
   const r=inner.getBoundingClientRect();
   const vw=slides[cur].clientWidth, vh=slides[cur].clientHeight;
   if(r.width<1||r.height<1)return;
-  let s=Math.min(vw/r.width, vh/r.height);
+  const isMobile=window.matchMedia('(max-width:640px)').matches;
+  let s=isMobile ? Math.min(vw/r.width, 1.6) : Math.min(vw/r.width, vh/r.height);
   s=Math.min(s, 1.6);
   inner.style.transform='scale('+s+')';
 }
