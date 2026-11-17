@@ -94,6 +94,44 @@
   #pager{position:fixed;right:22px;bottom:18px;color:#8b94a6;font-size:15px;z-index:50;
     font-family:-apple-system,"PingFang SC",sans-serif;letter-spacing:1px;}
   #hint{position:fixed;left:22px;bottom:18px;color:#5c6675;font-size:14px;z-index:50;}
+
+  /* ===== 移动端自适应 ===== */
+  @media (max-width:640px){
+    html,body{overflow:auto;}
+    #stage{display:block;}
+    #canvas{width:100%;height:auto;}
+    .slide{position:relative;inset:auto;width:100%;height:auto;min-height:100vh;padding:46px 18px 80px;overflow:visible;}
+    .slide h1{font-size:24px;padding-bottom:10px;margin-bottom:18px;border-bottom-width:3px;}
+    .slide .tag{font-size:13px;letter-spacing:2px;margin-bottom:8px;}
+    ul li{font-size:16px;padding-left:22px;margin-bottom:12px;line-height:1.5;}
+    ul li::before{width:8px;height:8px;top:7px;}
+    table{margin-top:4px;}
+    th{font-size:14px;padding:8px 8px;font-weight:600;}
+    td{font-size:13px;padding:8px 10px;}
+    .slide.title .kicker{font-size:15px;letter-spacing:4px;margin-bottom:20px;}
+    .slide.title h1{font-size:25px;margin:0 0 20px;line-height:1.3;}
+    .slide.title .rule{width:60px;height:4px;margin:0 auto 24px;}
+    .slide.title .sub{font-size:19px;margin-bottom:10px;}
+    .slide.title .meta{font-size:14px;}
+    .slide.lead{min-height:55vh;}
+    .slide.lead .part{font-size:15px;letter-spacing:4px;margin-bottom:14px;}
+    .slide.lead h1{font-size:27px;}
+    .slide.lead .rule{width:50px;height:4px;margin:18px auto 0;}
+    .slide.toc ul li{font-size:17px;margin-bottom:14px;line-height:1.45;}
+    .slide.toc ul li::before{top:9px;width:9px;height:9px;}
+    .leadline{font-size:15px;margin-bottom:14px;}
+    .cols{flex-direction:column;gap:14px;}
+    .col{padding:20px 16px;}
+    .col svg{width:64px;height:64px;margin-bottom:10px;}
+    .cname{font-size:19px;margin-bottom:8px;}
+    .cdesc{font-size:15px;}
+    .slide.has-art .art{flex:0 0 auto;margin-top:18px;}
+    .slide.has-art .art svg{max-height:230px;max-width:100%;}
+    .slide .foot{position:static;margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;}
+    .foot .footlogo{height:28px;width:284px;}
+    #pager{right:12px;bottom:10px;font-size:12px;}
+    #hint{display:none;}
+  }
 </style>
 </head>
 <body>
@@ -582,7 +620,8 @@
   if (isNaN(cur) || cur < 0 || cur >= N) cur = 0;
 
   function fit(){
-    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    var isMobile = window.matchMedia('(max-width:640px)').matches;
+    var s = isMobile ? 1 : Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
     canvas.style.transform = 'scale(' + s + ')';
   }
   function show(i){
