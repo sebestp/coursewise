@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>领域驱动设计（DDD）的实现（互动 HTML 课件 · v1）</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--ink:#1a1a1a;--accent:#0b5ed7;--blue:#0b5ed7;--green:#0a7d3c;--paper:#fff;--muted:#666;--line:#e5e5e5;--code:#f6f8fa;--domain:#0a7d3c;--warn:#b06a00}
+html,body{height:100%}
+body{font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:#111;overflow:hidden}
+.slide{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--paper);opacity:0;visibility:hidden;transition:opacity .25s}
+.slide.active{opacity:1;visibility:visible}
+.inner{position:relative;width:1180px;max-width:96vw}
+.fill{display:flex;flex-direction:column;justify-content:center;gap:18px}
+.sec-label{font-size:18px;color:var(--accent);font-weight:700;letter-spacing:.05em;margin-bottom:4px;text-align:center}
+header h2{font-size:42px;font-weight:700;margin-bottom:10px;line-height:1.3;text-align:center}
+.lead{font-size:26px;color:#333;margin-bottom:8px;text-align:center}
+.body li{list-style:none;display:flex;gap:12px;margin:12px 0;font-size:23px;line-height:1.55}
+.body .dot{color:var(--accent);font-weight:700;flex:none}
+b,strong{color:var(--ink)}
+.codeblock{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:16px 20px;font-family:"JetBrains Mono","SF Mono",Consolas,monospace;font-size:17.5px;line-height:1.55;overflow:auto;white-space:pre;margin:10px 0}
+.codeblock .cm{color:#6a737d}
+.codeblock .kw{color:#cf222e}
+.codeblock .ty{color:#0550ae}
+.codeblock .st{color:#0a3069}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:20px}
+th,td{border:1px solid var(--line);padding:12px 16px;text-align:left;vertical-align:top;line-height:1.5}
+th{background:#f0f4f8;font-weight:700}
+.cards{display:flex;gap:16px;margin:12px 0;flex-wrap:wrap}
+.card{flex:1;min-width:200px;background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:18px}
+.card h3{font-size:22px;margin-bottom:8px;color:var(--accent)}
+.card p{font-size:18px;color:#444;line-height:1.55}
+.two{display:flex;gap:24px;align-items:flex-start}
+.two>div{flex:1}
+/* 封面 */
+.cover{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center}
+.cover-sub{font-size:22px;color:var(--muted)}
+.cover h1{font-size:50px;font-weight:700;line-height:1.3}
+.cover-sub2{font-size:20px;color:var(--muted)}
+.cover-badge{background:var(--accent);color:#fff;padding:7px 18px;border-radius:20px;font-size:16px}
+/* 分层图交互 */
+.layer-box{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.layer{cursor:pointer;padding:15px 22px;border-radius:8px;border:2px solid var(--line);font-family:Consolas,monospace;font-size:19px;transition:.15s;display:flex;justify-content:space-between;align-items:center}
+.layer:hover{border-color:var(--accent)}
+.layer.on{border-color:var(--accent);background:#eef4ff;box-shadow:0 2px 8px rgba(11,94,215,.15)}
+.layer .lt{font-weight:700}
+.layer .lr{font-size:14px;color:var(--muted)}
+.layer.domain{background:#f0f9f2;border-color:#b8dcc0}
+.layer.domain.on{border-color:var(--green);box-shadow:0 2px 8px rgba(10,125,60,.15)}
+.layer-detail{min-height:84px;background:#f8fafc;border:1px dashed var(--line);border-radius:8px;padding:16px 20px;font-size:19px;line-height:1.6;color:#333}
+.layer-detail .dn{font-weight:700;color:var(--accent)}
+.layer-detail.domain .dn{color:var(--green)}
+.arrow-note{font-size:15px;color:var(--muted);text-align:center;margin-top:4px}
+/* 导航 */
+.nav{position:fixed;right:16px;bottom:16px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:10px;padding:8px 12px;box-shadow:0 2px 12px rgba(0,0,0,.12);z-index:50}
+.nav button{border:1px solid #ddd;background:#fff;border-radius:6px;padding:6px 12px;font-size:15px;cursor:pointer}
+.nav button:hover{background:#f5f7fa}
+.nav .pageno{font-size:14px;color:var(--muted);min-width:56px;text-align:center}
+.nav .toc-btn{font-size:16px}
+/* 目录 */
+.toc{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:60}
+.toc.open{display:block}
+.toc-panel{position:absolute;left:0;top:0;bottom:0;width:320px;background:#fff;padding:20px;overflow-y:auto;box-shadow:2px 0 16px rgba(0,0,0,.2)}
+.toc-panel h3{font-size:18px;margin-bottom:12px}
+.toc-panel .grp{font-size:14px;font-weight:700;color:var(--accent);margin:14px 0 4px}
+.toc-panel a{display:block;font-size:15px;color:#333;text-decoration:none;padding:5px 8px;border-radius:4px}
+.toc-panel a:hover{background:#f0f4f8}
+.toc-close{float:right;border:none;background:none;font-size:20px;cursor:pointer}
+@media (max-width:640px){
+  header h2{font-size:24px}
+  .body li{font-size:16px}
+  .codeblock{font-size:12.5px}
+  table{font-size:14px}
+  th,td{padding:7px 9px}
+  .two{flex-direction:column}
+  .card{min-width:100%}
+}
+</style>
+</head>
+<body>
+<div id="slides">
+
+<!-- 封面 -->
+<section class="slide active"><div class="inner">
+  <div class="cover">
+    <div class="cover-sub">软件工程实践 · 领域驱动设计</div>
+    <h1>领域驱动设计（DDD）的实现</h1>
+    <div class="cover-sub2">以「订单上下文」代码为案例</div>
+    <div class="cover-badge">互动 HTML 课件 · v1 · 响应式 · 全屏</div>
+  </div>
+</div></section>
+
+<!-- 主要内容 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">主要内容</div>
+  <header><h2>九大部分</h2></header>
+  <div class="cards">
+    <div class="card"><h3>1 贫血模型的问题</h3><p>对象没有行为，规则外流</p></div>
+    <div class="card"><h3>2 DDD 的解决思路</h3><p>业务不变量 + 限界上下文</p></div>
+    <div class="card"><h3>3 DDD 分层</h3><p>四层架构与依赖方向</p></div>
+  </div>
+  <div class="cards">
+    <div class="card"><h3>4 目录结构</h3><p>按上下文分包，每层一包</p></div>
+    <div class="card"><h3>5-6 Controller 与应用服务</h3><p>翻译转发 · 用例编排</p></div>
+    <div class="card"><h3>7 领域层核心构件</h3><p>聚合 / 实体 / 领域服务 / 事件</p></div>
+  </div>
+  <div class="cards">
+    <div class="card"><h3>8 基础设施层仓储</h3><p>聚合 vs PO 双模型</p></div>
+    <div class="card"><h3>9 事件落地与何时用</h3><p>跨上下文 · 适合/不适合</p></div>
+    <div class="card"><h3>案例代码</h3><p>订单 + 商品两个上下文</p></div>
+  </div>
+</div></section>
+
+<!-- 1.1 贫血模型 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">一、贫血模型的问题 · 1.1</div>
+  <header><h2>什么是贫血模型</h2></header>
+  <p class="lead"><b>贫血模型（Anemic Domain Model）</b>：领域对象只有字段 + getter/setter，没有行为。</p>
+  <div class="codeblock"><span class="kw">public class</span> <span class="ty">Order</span> {
+    <span class="kw">private</span> String orderId;
+    <span class="kw">private</span> String status;
+    <span class="kw">private</span> BigDecimal totalAmount;
+    <span class="kw">private</span> Date paidAt;
+    <span class="cm">// 全是 getter / setter，没有业务方法</span>
+    <span class="kw">public void</span> <span class="ty">setStatus</span>(String status) { this.status = status; }
+    <span class="kw">public void</span> <span class="ty">setPaidAt</span>(Date paidAt) { this.paidAt = paidAt; }
+    <span class="cm">// 谁都能调</span>
+}</div>
+  <div class="body"><li><span class="dot">•</span><span>最典型的例子就是订单 <b>Order</b>——有订单 ID、状态、金额、支付时间等字段，但业务方法不在 Order 里。</span></li></div>
+</div></section>
+
+<!-- 1.2 后果 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">一、贫血模型的问题 · 1.2</div>
+  <header><h2>后果：规则外流，Service 变胖</h2></header>
+  <div class="codeblock"><span class="cm">// OrderService.pay()</span>
+<span class="kw">public void</span> <span class="ty">pay</span>(String orderId) {
+    Order o = dao.select(orderId);
+    <span class="kw">if</span> (<span class="st">"PAID"</span>.equals(o.getStatus())) <span class="kw">throw</span> ...;   <span class="cm">// 规则流到这里</span>
+    <span class="kw">if</span> (<span class="st">"CANCELLED"</span>.equals(o.getStatus())) <span class="kw">throw</span> ...;
+    o.setStatus(<span class="st">"PAID"</span>);                              <span class="cm">// 对象自己管不住状态</span>
+    o.setPaidAt(<span class="kw">new</span> Date());
+    dao.update(o);
+    pointsService.add(o.getCustomerId(), o.getAmount());   <span class="cm">// 依赖越滚越多</span>
+    smsService.send(o.getPhone(), <span class="st">"支付成功"</span>);
+}</div>
+  <div class="body"><li><span class="dot">•</span><span>Order 没有行为 → 规则只能外流 → Service 被迫变胖，一个方法里塞进越来越多的依赖。</span></li></div>
+</div></section>
+
+<!-- 1.3 三个问题 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">一、贫血模型的问题 · 1.3</div>
+  <header><h2>贫血模型的三个问题</h2></header>
+  <div class="body">
+    <li><span class="dot">1</span><span><b>违背面向对象</b>：对象应封装数据 + 行为，贫血模型把它们分开了，对象是「苍白」的。</span></li>
+    <li><span class="dot">2</span><span><b>Service 变胖</b>：业务复杂后，一个 Service 几千上万行，所有订单代码堆在一起，无法再拆分。</span></li>
+    <li><span class="dot">3</span><span><b>违反开闭原则</b>：每次改动都要打开 Service 添砖加瓦，久而久之不可维护。</span></li>
+  </div>
+</div></section>
+
+<!-- 2.1 对照 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">二、DDD 的解决思路 · 2.1</div>
+  <header><h2>贫血写法 vs DDD 的主张</h2></header>
+  <table>
+    <tr><th>传统贫血写法</th><th>DDD 的主张</th></tr>
+    <tr><td>以数据表为中心建对象</td><td>以 <b>业务不变量</b> 为中心建聚合</td></tr>
+    <tr><td><code>order.setStatus("PAID")</code></td><td><code>order.pay()</code> —— 对象自己拒绝非法流转</td></tr>
+    <tr><td>一个 Service 管多个对象</td><td>一个事务只改一个聚合</td></tr>
+    <tr><td>上层依赖下层的具体实现</td><td>依赖倒置：内层定义接口，外层实现</td></tr>
+    <tr><td>一个系统一套模型</td><td>按限界上下文切分模型</td></tr>
+  </table>
+</div></section>
+
+<!-- 2.2 限界上下文 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">二、DDD 的解决思路 · 2.2</div>
+  <header><h2>demo 里的两条边界（限界上下文）</h2></header>
+  <div class="codeblock">com.shop.order   订单上下文  ← 主线
+com.shop.product 商品上下文  ← 协作方</div>
+  <div class="body"><li><span class="dot">•</span><span>同一个「商品」：订单只要<b>快照</b>（ID、名称、当时价格），商品才是完整聚合（价格、库存、状态）。</span></li></div>
+</div></section>
+
+<!-- 3.1 四层架构（交互） -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">三、DDD 分层 · 3.1</div>
+  <header><h2>四层架构（点每层看职责）</h2></header>
+  <div class="layer-box">
+    <div class="layer" data-ly="interfaces" onclick="showLayer(this)"><span class="lt">interfaces</span><span class="lr">Controller / DTO</span></div>
+    <div class="layer" data-ly="application" onclick="showLayer(this)"><span class="lt">application</span><span class="lr">应用服务 / 端口</span></div>
+    <div class="layer domain" data-ly="domain" onclick="showLayer(this)"><span class="lt">domain</span><span class="lr">聚合 / 实体 / 领域服务 / 事件 / 仓储接口</span></div>
+    <div class="layer" data-ly="infrastructure" onclick="showLayer(this)"><span class="lt">infrastructure</span><span class="lr">JPA / Adapter / 事件发布实现</span></div>
+  </div>
+  <div class="layer-detail" id="layerDetail">👆 点击上面某一层，查看它的职责</div>
+  <div class="arrow-note">依赖规则：箭头指向 <b>domain</b>，domain 不认识任何框架</div>
+</div></section>
+
+<!-- 3.2 依赖规则 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">三、DDD 分层 · 3.2</div>
+  <header><h2>依赖规则与「插座」比喻</h2></header>
+  <div class="body">
+    <li><span class="dot">•</span><span><b>箭头指向 domain</b>：domain 不认识任何框架、数据库、外部服务。</span></li>
+    <li><span class="dot">•</span><span>与三层架构对比：三层按<b>技术</b>拆分（表示/业务/数据），DDD 按<b>业务</b>拆分。</span></li>
+    <li><span class="dot">•</span><span><b>接口位置颠倒</b>：三层里业务层依赖数据层的 DAO 接口；DDD 里接口<b>定义在 domain</b>（由使用者定义），infrastructure 实现它。</span></li>
+  </div>
+  <div class="card" style="margin-top:10px"><h3>🔌 插座比喻</h3><p>教室墙上的 220V 插座，是教室根据教学需要<b>定义</b>的接口，不是电网决定的。车间要三相电，就定义三相接口——「我需要什么接口，就装什么接口，供电方来实现」。</p></div>
+</div></section>
+
+<!-- 4.1 目录结构 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">四、目录结构 · 4.1</div>
+  <header><h2>目录结构：按上下文分包，每层一包</h2></header>
+  <div class="codeblock">com.shop.order/
+├── interfaces/        接收 HTTP 请求 → OrderController
+├── application/       编排用例 → OrderApplicationService、Command、View
+├── domain/            业务规则 → Order、OrderItem、Money、定价、事件、仓储接口
+└── infrastructure/    框架细节 → persistence、adapter、event
+
+com.shop.product/      同一个四层结构（另一个限界上下文）</div>
+</div></section>
+
+<!-- 4.2 规则 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">四、目录结构 · 4.2</div>
+  <header><h2>目录背后的规则</h2></header>
+  <table>
+    <tr><th>规则</th><th>理由</th></tr>
+    <tr><td>domain 零 Spring / JPA 注解</td><td>领域可 new 出来直接测，不依赖容器</td></tr>
+    <tr><td>仓储接口在 domain，实现在 infrastructure</td><td>换数据库不动业务代码（DIP）</td></tr>
+    <tr><td>对外只返回 DTO（OrderView）</td><td>外部拿不到聚合，绕不过 pay() 乱改状态</td></tr>
+    <tr><td>一个 @Transactional 只改一个聚合</td><td>事务边界 = 一致性边界</td></tr>
+  </table>
+  <div class="body"><li><span class="dot">✓</span><span><b>验证方法</b>：把 Spring 从 classpath 拿掉，domain 包还能编译，才算划对了。</span></li></div>
+</div></section>
+
+<!-- 5.1 Controller -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">五、用户接口层 · 5.1</div>
+  <header><h2>Controller 只做翻译和转发</h2></header>
+  <div class="codeblock"><span class="cm">@RestController @RequestMapping("/api/orders")</span>
+<span class="kw">public class</span> <span class="ty">OrderController</span> {
+    <span class="kw">private final</span> OrderApplicationService applicationService; <span class="cm">// 只依赖应用服务</span>
+
+    @PostMapping @ResponseStatus(HttpStatus.CREATED)
+    <span class="kw">public</span> OrderView <span class="ty">place</span>(@Valid @RequestBody PlaceOrderCommand cmd) {
+        <span class="kw">return</span> applicationService.placeOrder(cmd);  <span class="cm">// 一行</span>
+    }
+    @PostMapping(<span class="st">"/{orderId}/pay"</span>)
+    <span class="kw">public</span> OrderView <span class="ty">pay</span>(@PathVariable String orderId) {
+        <span class="kw">return</span> applicationService.payOrder(orderId);  <span class="cm">// 一行</span>
+    }
+}</div>
+  <div class="body">
+    <li><span class="dot">•</span><span>入参 <b>PlaceOrderCommand</b>、出参 <b>OrderView</b> 都是 DTO，不是聚合。</span></li>
+    <li><span class="dot">•</span><span>领域异常在这里翻译成 HTTP 状态：<b>OrderStateException → 409 Conflict</b>。</span></li>
+  </div>
+</div></section>
+
+<!-- 6.1 应用服务编排 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">六、应用服务层 · 6.1</div>
+  <header><h2>应用服务 = 一个用例的编排脚本</h2></header>
+  <div class="codeblock"><span class="cm">@Transactional</span>
+<span class="kw">public</span> OrderView <span class="ty">placeOrder</span>(PlaceOrderCommand cmd) {
+    <span class="cm">// 1. 查外部依赖（商品快照 + 会员等级）</span>
+    List&lt;...&gt; snapshots = cmd.items().stream()
+        .map(line -&gt; productPort.getProduct(line.productId())
+            .orElseThrow(() -&gt; <span class="kw">new</span> IllegalArgumentException(<span class="st">"商品不存在"</span>)))
+        .toList();
+    MemberLevel level = memberLevelPort.getLevel(cmd.customerId());
+
+    <span class="cm">// 2. 委托给领域（校验 + 定价 + 事件都在里面）</span>
+    Order order = Order.place(..., <span class="kw">new</span> Address(...), level, pricingService);
+
+    <span class="cm">// 3. 保存 → 发事件 → 转 DTO</span>
+    orderRepository.save(order);
+    eventPublisher.publish(order.pullEvents());
+    <span class="kw">return</span> OrderViewAssembler.toView(order);
+}</div>
+  <div class="card" style="margin-top:8px"><h3>固定套路</h3><p><b>查依赖 → 调聚合 → 存 → 发事件 → 转 DTO</b></p></div>
+</div></section>
+
+<!-- 6.2 应用服务边界 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">六、应用服务层 · 6.2</div>
+  <header><h2>应用服务的边界</h2></header>
+  <table>
+    <tr><th>不做什么</th><th>谁来做</th></tr>
+    <tr><td>不写业务 if / switch</td><td>聚合 <code>Order.pay()</code></td></tr>
+    <tr><td>不算金额</td><td>领域服务 <code>OrderPricingService</code></td></tr>
+    <tr><td>不碰 JPA / SQL</td><td>仓储 <code>OrderRepository</code></td></tr>
+  </table>
+  <div class="body"><li><span class="dot">•</span><span><b>@Transactional 画出的就是一致性边界</b>：一个事务只改一个聚合。硬性约束：应用服务里找不到任何基于 OrderStatus 的 if/switch。</span></li></div>
+</div></section>
+
+<!-- 7.1 domain 包 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">七、领域层：核心构件 · 7.1</div>
+  <header><h2>domain 包里有什么</h2></header>
+  <div class="codeblock">com.shop.order.domain/
+├── Order.java               聚合根
+├── OrderItem.java           实体
+├── OrderId / Money / Address  值对象
+├── OrderPricingService.java 领域服务
+├── OrderPlacedEvent / Paid / Cancelled  领域事件
+├── OrderRepository.java     仓储接口
+└── ProductPort / MemberLevelPort.java    端口</div>
+</div></section>
+
+<!-- 7.2 聚合根 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">七、领域层 · 7.2</div>
+  <header><h2>聚合根 Order：规则的守护者</h2></header>
+  <div class="codeblock"><span class="kw">public class</span> <span class="ty">Order</span> {
+    <span class="kw">private final</span> OrderId orderId;        <span class="cm">// 聚合根身份</span>
+    <span class="kw">private final</span> String customerId;     <span class="cm">// 只存 ID，不跨聚合引用</span>
+    <span class="kw">private final</span> List&lt;OrderItem&gt; items;  <span class="cm">// 订单项，只读暴露</span>
+    <span class="kw">private final</span> Address address;        <span class="cm">// 值对象</span>
+    <span class="kw">private final</span> Money totalAmount;      <span class="cm">// 最终应付</span>
+    <span class="kw">private</span> OrderStatus status;           <span class="cm">// 唯一可变状态</span>
+    <span class="kw">private final</span> List&lt;Object&gt; domainEvents; <span class="cm">// 内部事件列表</span>
+}</div>
+  <div class="body">
+    <li><span class="dot">•</span><span><b>一致性边界</b>：外部只能通过聚合根访问内部，OrderItem 生命周期从属订单。</span></li>
+    <li><span class="dot">•</span><span><b>越界的后果</b>：直接从数据库取 orderItem 建对象，绕过订单业务规则（金额、库存判断）→ 订单处理失调。</span></li>
+    <li><span class="dot">•</span><span><b>构造器私有 + reconstruct</b>：外面 new 不出来，靠 place 工厂方法创建；reconstruct 供仓储从 PO 还原（绕过校验，数据已合法）。</span></li>
+  </div>
+</div></section>
+
+<!-- 7.3 工厂方法 + 业务方法 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">七、领域层 · 7.3</div>
+  <header><h2>聚合的两处入口：工厂方法与业务方法</h2></header>
+  <p class="lead" style="font-size:20px"><b>私有构造器为什么 place 能 new？</b>place 在 Order 内部，内部方法可访问私有构造器；外部只能靠 place 工厂方法下订单，不能凭空 new 一张空订单。</p>
+  <div class="codeblock"><span class="cm">// 创建：工厂保证"生下来就合法"</span>
+<span class="kw">public static</span> Order <span class="ty">place</span>(...) {
+    <span class="kw">if</span> (snapshots.isEmpty()) <span class="kw">throw new</span> IllegalArgumentException(<span class="st">"至少选择一件商品"</span>);
+    Money total = <span class="cm">/* 订单项小计累加 */</span>;
+    Money finalTotal = pricing.apply(total, memberLevel);
+    Order order = <span class="kw">new</span> Order(OrderId.newOne(), ..., finalTotal, PENDING_PAYMENT, now());
+    order.domainEvents.add(<span class="kw">new</span> OrderPlacedEvent(...));
+    <span class="kw">return</span> order;
+}
+
+<span class="cm">// 变更：业务方法，没有 setter</span>
+<span class="kw">public void</span> <span class="ty">pay</span>() {
+    <span class="kw">switch</span> (this.status) {
+        <span class="kw">case</span> PENDING_PAYMENT -&gt; { this.status = PAID; this.paidAt = now();
+            this.domainEvents.add(<span class="kw">new</span> OrderPaidEvent(...)); }
+        <span class="kw">case</span> PAID -&gt; <span class="kw">throw</span> OrderStateException.cannotPayBecauseAlreadyPaid();
+        <span class="kw">case</span> CANCELLED -&gt; <span class="kw">throw</span> OrderStateException.cannotPayBecauseCancelled();
+    }
+}</div>
+</div></section>
+
+<!-- 7.4 领域服务 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">七、领域层 · 7.4</div>
+  <header><h2>领域服务：规则不属于任何单个对象时</h2></header>
+  <p class="lead">需求：<b>「会员折扣 + 满 300 减 30，不叠加」</b>。放哪里？</p>
+  <table>
+    <tr><th>放在哪</th><th>为什么不行</th></tr>
+    <tr><td>Order 实体</td><td>涉及会员等级与促销协作，放进去让 Order 变上帝对象</td></tr>
+    <tr><td>应用服务</td><td>应用服务不许写业务判断</td></tr>
+    <tr><td><b>领域服务</b> ✅</td><td>是业务规则，又无状态、可复用、好测试</td></tr>
+  </table>
+  <div class="codeblock"><span class="kw">public</span> Money <span class="ty">apply</span>(Money originalTotal, MemberLevel memberLevel) {
+    Money afterMemberDiscount = originalTotal.discount(memberLevel.discountRate());
+    <span class="kw">if</span> (memberLevel == MemberLevel.NORMAL
+            &amp;&amp; originalTotal.isGreaterThanOrEqual(THRESHOLD_300))
+        <span class="kw">return</span> originalTotal.subtract(REDUCTION_30);
+    <span class="kw">return</span> afterMemberDiscount;  <span class="cm">// 二选一，不叠加</span>
+}</div>
+</div></section>
+
+<!-- 7.5 领域事件 + 仓储接口 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">七、领域层 · 7.5</div>
+  <header><h2>领域事件与仓储接口</h2></header>
+  <div class="two">
+    <div>
+      <div class="card"><h3>📢 领域事件：记录「已发生的事实」</h3><p>OrderPlacedEvent（下单）、OrderPaidEvent（支付）、OrderCancelledEvent（取消）。和业务状态变更写在同一处。</p></div>
+      <div class="codeblock"><span class="kw">public</span> List&lt;Object&gt; <span class="ty">pullEvents</span>() {
+    List&lt;Object&gt; snapshot = List.copyOf(domainEvents);
+    domainEvents.clear();
+    <span class="kw">return</span> snapshot;
+}</div>
+      <div class="body"><li><span class="dot">•</span><span><b>pull 而非 publish</b>：让 domain 不依赖消息基础设施。</span></li></div>
+      <div class="body"><li><span class="dot">•</span><span><b>买 5 个杯子</b>：传统三层在 order service 直接查库存（强耦合）；DDD 发事件让库存上下文监听处理（解耦）。</span></li></div>
+    </div>
+    <div>
+      <div class="card"><h3>🗄 仓储接口：领域层说「我需要什么」</h3><p>只有接口，没有 @Repository / JPA。</p></div>
+      <div class="codeblock"><span class="kw">public interface</span> <span class="ty">OrderRepository</span> {
+    Order save(Order order);
+    Optional&lt;Order&gt; findById(OrderId orderId);
+    List&lt;Order&gt; findByCustomerId(String customerId);
+}</div>
+      <div class="body"><li><span class="dot">•</span><span>返回的是聚合 <b>Order</b>，不是数据库 PO。</span></li></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 8.1 仓储实现 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">八、基础设施层 · 8.1</div>
+  <header><h2>仓储实现：把聚合翻译成数据库行</h2></header>
+  <div class="codeblock"><span class="cm">// infrastructure/persistence/OrderRepositoryImpl.java</span>
+@Repository
+<span class="kw">public class</span> <span class="ty">OrderRepositoryImpl</span> <span class="kw">implements</span> OrderRepository {
+    <span class="kw">private final</span> OrderJpaRepository jpa; <span class="cm">// Spring Data 技术接口</span>
+
+    <span class="kw">public</span> Order <span class="ty">save</span>(Order order) {
+        OrderPO po = jpa.findById(order.orderId().value())
+            .orElseGet(() -&gt; OrderMapper.toPO(order));
+        <span class="kw">return</span> OrderMapper.toDomain(jpa.save(po));
+    }
+}</div>
+  <div class="body"><li><span class="dot">•</span><span><b>依赖倒置闭环</b>：外层实现了内层定义的接口，内层一行不改就能换数据库。</span></li></div>
+</div></section>
+
+<!-- 8.2 聚合 vs PO -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">八、基础设施层 · 8.2</div>
+  <header><h2>聚合与 PO 是两个模型</h2></header>
+  <table>
+    <tr><th></th><th>聚合 Order</th><th>持久化对象 OrderPO</th></tr>
+    <tr><td>注解 / setter</td><td>无 @Entity、无 setter</td><td>有 @Entity、有 setter</td></tr>
+    <tr><td>业务规则</td><td>有</td><td>无</td></tr>
+    <tr><td>目的</td><td>表达业务</td><td>映射数据表</td></tr>
+  </table>
+  <div class="body">
+    <li><span class="dot">•</span><span><b>OrderMapper.toPO()</b>：领域聚合 → PO（保存方向）。</span></li>
+    <li><span class="dot">•</span><span><b>reconstruct</b>：PO → 聚合（恢复方向，绕过业务校验，因为数据已合法）。</span></li>
+  </div>
+</div></section>
+
+<!-- 9.1 事件落地 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">九、事件落地与何时用 · 9.1</div>
+  <header><h2>领域事件落地：事务提交后再发</h2></header>
+  <div class="body">
+    <li><span class="dot">•</span><span>消费者统一用 <b>@TransactionalEventListener(phase = AFTER_COMMIT)</b>：事务提交后才派发，消费者绝不会读到未提交数据。</span></li>
+  </div>
+  <div class="codeblock">事务 A：订单支付（只改 Order）→ 提交 ──AFTER_COMMIT──► 事务 B：商品扣库存 → 提交</div>
+  <div class="body"><li><span class="dot">•</span><span><b>一个事务一个聚合 → 事件达成最终一致</b>（扣库存失败需补偿，代码里有告警日志）。</span></li></div>
+</div></section>
+
+<!-- 9.2 何时用 -->
+<section class="slide"><div class="inner fill">
+  <div class="sec-label">九、事件落地与何时用 · 9.2</div>
+  <header><h2>什么时候用 DDD</h2></header>
+  <table>
+    <tr><th>适合</th><th>不适合</th></tr>
+    <tr><td>业务规则复杂、持续变化、长期维护的核心域</td><td>简单 CRUD、报表系统</td></tr>
+  </table>
+  <div class="card" style="margin-top:14px"><h3>⚠️ AI 生成代码默认三层架构</h3><p>你不明确告诉 AI「按 DDD 区分四层」，AI 只会生成三层架构的代码——因为全世界的代码大多是三层写法，AI 永远按最常见的方式生成。用 AI 辅助编程时，要主动、明确描述 DDD 的分层要求。</p></div>
+  <table style="margin-top:16px">
+    <tr><th>常见误区</th><th>正解</th></tr>
+    <tr><td>DDD = 分层和类名</td><td>核心是 <b>边界与不变量</b></td></tr>
+    <tr><td>所有模块都要 DDD</td><td>只用在核心域</td></tr>
+    <tr><td>聚合越大越好</td><td>越小事务冲突越少</td></tr>
+  </table>
+</div></section>
+
+</div>
+
+<!-- 导航 + 目录 -->
+<div class="nav">
+  <button class="toc-btn" onclick="document.getElementById('toc').classList.add('open');this.blur()">☰</button>
+  <span class="pageno" id="pageno">1 / 23</span>
+  <button onclick="go(-1);this.blur()">‹</button>
+  <button onclick="go(1);this.blur()">›</button>
+  <button id="narrbtn" onclick="toggleNarrate();this.blur()" title="语音讲解（自动翻页）">🔊</button>
+  <button onclick="toggleFS();this.blur()" title="全屏">⛶</button>
+</div>
+
+<div class="toc" id="toc" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="toc-panel">
+    <button class="toc-close" onclick="document.getElementById('toc').classList.remove('open')">✕</button>
+    <h3>目录</h3>
+    <a href="#" onclick="jump(0);return false">封面</a>
+    <a href="#" onclick="jump(1);return false">主要内容</a>
+    <div class="grp">一、贫血模型的问题</div>
+    <a href="#" onclick="jump(2);return false">1.1 什么是贫血模型</a>
+    <a href="#" onclick="jump(3);return false">1.2 规则外流 Service 变胖</a>
+    <a href="#" onclick="jump(4);return false">1.3 三个问题</a>
+    <div class="grp">二、DDD 的解决思路</div>
+    <a href="#" onclick="jump(5);return false">2.1 贫血 vs DDD 对照</a>
+    <a href="#" onclick="jump(6);return false">2.2 两个限界上下文</a>
+    <div class="grp">三、DDD 分层</div>
+    <a href="#" onclick="jump(7);return false">3.1 四层架构（交互）</a>
+    <a href="#" onclick="jump(8);return false">3.2 依赖规则与插座比喻</a>
+    <div class="grp">四、目录结构</div>
+    <a href="#" onclick="jump(9);return false">4.1 目录结构</a>
+    <a href="#" onclick="jump(10);return false">4.2 目录背后的规则</a>
+    <div class="grp">五、用户接口层</div>
+    <a href="#" onclick="jump(11);return false">5.1 Controller 翻译转发</a>
+    <div class="grp">六、应用服务层</div>
+    <a href="#" onclick="jump(12);return false">6.1 用例编排脚本</a>
+    <a href="#" onclick="jump(13);return false">6.2 应用服务的边界</a>
+    <div class="grp">七、领域层核心构件</div>
+    <a href="#" onclick="jump(14);return false">7.1 domain 包里有什么</a>
+    <a href="#" onclick="jump(15);return false">7.2 聚合根 Order</a>
+    <a href="#" onclick="jump(16);return false">7.3 工厂方法与业务方法</a>
+    <a href="#" onclick="jump(17);return false">7.4 领域服务</a>
+    <a href="#" onclick="jump(18);return false">7.5 领域事件与仓储接口</a>
+    <div class="grp">八、基础设施层</div>
+    <a href="#" onclick="jump(19);return false">8.1 仓储实现</a>
+    <a href="#" onclick="jump(20);return false">8.2 聚合 vs PO</a>
+    <div class="grp">九、事件落地与何时用</div>
+    <a href="#" onclick="jump(21);return false">9.1 领域事件落地</a>
+    <a href="#" onclick="jump(22);return false">9.2 什么时候用 DDD</a>
+  </div>
+</div>
+
+<script>
+let cur=0,total=23;
+let narrate=false;
+const player=new Audio();
+const slides=document.querySelectorAll('.slide');
+function show(){for(let i=0;i<slides.length;i++)slides[i].classList.toggle('active',i===cur);document.getElementById('pageno').textContent=(cur+1)+' / '+total;if(narrate)playCurrent();}
+function go(d){cur=Math.max(0,Math.min(total-1,cur+d));show();}
+function jump(i){cur=Math.max(0,Math.min(total-1,i));show();}
+function toggleFS(){if(document.fullscreenElement){document.exitFullscreen();}else{document.documentElement.requestFullscreen();}}
+function toggleNarrate(){
+  narrate=!narrate;
+  updateNarrateBtn();
+  if(narrate){playCurrent();}
+  else{player.pause();player.src='';}
+}
+function playCurrent(){
+  if(!narrate)return;
+  const src='audio/page-'+String(cur+1).padStart(2,'0')+'.mp3';
+  player.src=src;
+  player.onended=()=>{ if(cur<total-1){go(1);} else{narrate=false;updateNarrateBtn();} };
+  player.play().catch(()=>{});
+}
+function updateNarrateBtn(){document.getElementById('narrbtn').textContent=narrate?'⏸':'🔊';}
+/* 四层架构交互 */
+const LAYERS={
+  interfaces:{dn:"interfaces — 用户接口层",txt:"接收 HTTP 请求，Controller 只做翻译转发：DTO 进、DTO 出，领域异常翻译成 HTTP 状态码。这一层很薄，不写业务。"},
+  application:{dn:"application — 应用服务层",txt:"用例编排、事务边界、事件发布。固定套路：查依赖 → 调聚合 → 存 → 发事件 → 转 DTO。绝不写业务判断。"},
+  domain:{dn:"domain — 领域层（业务核心）",txt:"聚合 / 实体 / 值对象 / 领域服务 / 领域事件 / 仓储接口。全部业务规则在这里，不依赖任何框架、数据库、外部服务。"},
+  infrastructure:{dn:"infrastructure — 基础设施层",txt:"JPA、Adapter、事件发布实现等技术细节。实现 domain 定义的接口，换数据库不动业务代码。"},
+};
+function showLayer(el){
+  document.querySelectorAll('.layer').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  const d=document.getElementById('layerDetail');
+  const info=LAYERS[el.dataset.ly];
+  d.innerHTML='<span class="dn">'+info.dn+'</span><br>'+info.txt;
+  d.classList.toggle('domain', el.dataset.ly==='domain');
+}
+/* 键盘 */
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(1);}
+  else if(e.key==='ArrowLeft'){e.preventDefault();go(-1);}
+  else if(e.key==='f'||e.key==='F'){toggleFS();}
+  else if(e.key==='Escape'){if(document.fullscreenElement)document.exitFullscreen();}
+  else if(e.key==='Home'){jump(0);}
+  else if(e.key==='End'){jump(total-1);}
+});
+/* 自适应缩放 */
+function fit(){
+  const inner=document.querySelector('.slide.active .inner');
+  if(!inner)return;
+  inner.style.transform='none';
+  const w=inner.offsetWidth,h=inner.offsetHeight;
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const s=Math.min(vw/w, vh/h, 1.6);
+  inner.style.transform='scale('+s+')';
+}
+window.addEventListener('resize',fit);
+show();fit();
+</script>
+</body>
+</html>
